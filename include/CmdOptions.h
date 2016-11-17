@@ -20,6 +20,7 @@ bool str2ulong(const std::string &str, unsigned long int *value = nullptr, int b
 class CmdOptions {
 public:
   enum class ErrorType {NoError = 0, Option, OptArg, PID};
+  typedef std::vector<std::string> PID_List_Ty;
 
   bool parsed_from_cmdl;
   uint64_t cmd_lower_address;
@@ -28,7 +29,7 @@ public:
   bool cmd_up_addr_userset;
   bool cmd_show_unmapped;
   bool cmd_verbose;
-  std::vector<std::string> cmd_req_pid;
+  PID_List_Ty cmd_req_pid;
 
   CmdOptions();
   ErrorType parseFromCommandLine(int argc, char *argv[]);

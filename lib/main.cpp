@@ -4,6 +4,7 @@
 #include <iostream>
 #include <limits>
 #include <string>
+#include <vector>
 
 int main(int argc, char *argv[]) {
   CmdOptions cmdopts;
@@ -13,16 +14,37 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
-  if (cmdopts.cmd_req_pid.size() <= 0) {
+  // Validate pids and create process objects
+  std::vector<Process> processes;
+  for (CmdOptions::PID_List_Ty::iterator pid_it = cmdopts.cmd_req_pid.begin(),
+      pid_end = cmdopts.cmd_req_pid.end(); pid_it != pid_end; ) {
+    if ((str2ulong(*pid_it, nullptr, 10) == false)
+     && (pid_it->compare("self") != 0)) {
+      // Hmm, invalid iterator erase the pid
+      pid_it = cmdopts.cmd_req_pid.erase(pid_it);
+      pid_end = cmdopts.cmd_req_pid.end();
+      continue;
+    }
+    // Now try to create the process object. If any of the needed files the
+    // CTOR will throw an exception...
+    try {
+      Process cur_proc(*pid_it);
+      processes.push_back(cur_proc);
+    } catch(std::invalid_argument inv_arg_exc) {
+      std::cerr << "Skipping pid " << *pid_it << ": some needed files "
+                << "are not accessible!" << std::endl;
+      pid_it = cmdopts.cmd_req_pid.erase(pid_it);
+      pid_end = cmdopts.cmd_req_pid.end();
+      continue;
+    }
+    ++pid_it;
+  }
+
+  if (processes.size() <= 0) {
+    std::cerr << "No pids to process!" << std::endl;
     exit(-1);
   }
 
-  Process p("self");
-  p.populateRanges(cmdopts);
-  p.populatePages(cmdopts);
-
-  std::clog << "Found the following "
-            << std::dec << p.getVPageRanges().size() << " ranges:" << std::endl;
   // Print header lines
   std::clog << "no  "
             << " " << "from              " << " " << "to                "
@@ -38,11 +60,20 @@ int main(int argc, char *argv[]) {
             << " " << "swapoff        "
             << " " << "swty"
             << " " << "rawprops" << std::endl;
-  // Print found page ranges and pages
-  for (const VPageRange &vpr : p.getVPageRanges()) {
-    std::clog << vpr << std::endl;
-    for (const VPage &vp : vpr.getVPages()) {
-      std::clog << "     " << vp << std::endl;
+  for (Process &cur_proc : processes) {
+    cur_proc.populateRanges(cmdopts);
+    cur_proc.populatePages(cmdopts);
+    // Print found page ranges and pages
+    std::clog << "Process: " << cur_proc.getPID() << std::endl;
+    std::clog << "Found the following "
+              << std::dec << cur_proc.getVPageRanges().size() << " ranges:" << std::endl;
+    for (const VPageRange &vpr : cur_proc.getVPageRanges()) {
+      std::clog << vpr << std::endl;
+      /*
+      for (const VPage &vp : vpr.getVPages()) {
+        std::clog << "     " << vp << std::endl;
+      }
+      */
     }
   }
 }

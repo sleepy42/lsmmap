@@ -58,13 +58,13 @@ bool Process::checkForFiles(void) {
   // Now set path to the maps file. One would have to make sure that we do run
   // anywhere outside the /proc directory but... maybe later...
   maps_filepath = dir_path + "/maps";
-  if (access (maps_filepath.c_str(), F_OK) != 0) {
+  if (access (maps_filepath.c_str(), F_OK | R_OK) != 0) {
     maps_filepath.clear();
     return false;
   }
   // Now set path to the pagemap file.
   pagemap_filepath = dir_path + "/pagemap";
-  if (access (pagemap_filepath.c_str(), F_OK) != 0) {
+  if (access (pagemap_filepath.c_str(), F_OK | R_OK) != 0) {
     pagemap_filepath.clear();
     return false;
   }
