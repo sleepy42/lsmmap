@@ -31,7 +31,7 @@ public:
     std::is_same<typename std::iterator_traits<It_Ty>::value_type, uint64_t>::value &&
     std::is_base_of<std::forward_iterator_tag, typename std::iterator_traits<It_Ty>::iterator_category>::value
   , size_t>::type
-  addPFrames(It_Ty it_begin, It_Ty it_end);
+  addPFrames(const CmdOptions &cmd_opts, It_Ty it_begin, It_Ty it_end);
   bool addPFrame(const CmdOptions &cmd_opts, uint64_t frame_no);
 };
 

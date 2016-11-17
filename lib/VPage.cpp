@@ -39,30 +39,42 @@ void VPage::setRawPageProperties(uint64_t new_props, bool valid) {
 }
 
 bool VPage::isPresentRAM(void) const {
+  // Since 2.6.25
   return ((page_props & 0x8000000000000000) != 0);
 }
 
 bool VPage::isPresentSwap(void) const {
+  // Since 2.6.25
   return ((page_props & 0x4000000000000000) != 0);
 }
 
 bool VPage::isFileMapped(void) const {
+  // Since 3.5
   return ((page_props & 0x2000000000000000) != 0);
 }
 
 bool VPage::isSoftDirty(void) const {
+  // Since 2.6.25
   return ((page_props & 0x0080000000000000) != 0);
 }
 
+bool VPage::isExclusive(void) const {
+  // Since 4.2
+  return ((page_props & 0x0100000000000000) != 0);
+}
+
 uint64_t VPage::getFrameNumber(void) const {
+  // Since 2.6.25
   return (page_props & 0x007FFFFFFFFFFFFF);
 }
 
 uint8_t VPage::getSwapType(void) const {
+  // Since 2.6.25
   return static_cast<uint8_t>((page_props & 0x000000000000001F));
 }
 
 uint64_t VPage::getSwapOffset(void) const {
+  // Since 2.6.25
   return ((page_props & 0x007FFFFFFFFFFFE0) >> 5);
 }
 

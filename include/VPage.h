@@ -33,13 +33,14 @@ public:
   bool arePagePropertiesValid(void) const;
   uint64_t getRawPageProperties(void) const;
   void setRawPageProperties(uint64_t new_props, bool valid);
-  bool isPresentRAM(void) const;
-  bool isPresentSwap(void) const;
-  bool isFileMapped(void) const;
-  bool isSoftDirty(void) const;
-  uint64_t getFrameNumber(void) const;
-  uint8_t getSwapType(void) const;
-  uint64_t getSwapOffset(void) const;
+  bool isPresentRAM(void) const;        // Bit 63
+  bool isPresentSwap(void) const;       // Bit 62
+  bool isFileMapped(void) const;        // Bit 61
+  bool isExclusive(void) const;         // Bit 56
+  bool isSoftDirty(void) const;         // Bit 55
+  uint64_t getFrameNumber(void) const;  // Bits 0-54
+  uint8_t getSwapType(void) const;      // Bits 0-4
+  uint64_t getSwapOffset(void) const;   // Bits 5-54
 };
 std::ostream& operator<<(std::ostream &stream, const VPage &page);
 

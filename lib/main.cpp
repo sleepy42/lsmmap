@@ -1,4 +1,5 @@
 #include "CmdOptions.h"
+#include "PMemory.h"
 #include "Process.h"
 
 #include <iostream>
@@ -60,6 +61,8 @@ int main(int argc, char *argv[]) {
             << " " << "swapoff        "
             << " " << "swty"
             << " " << "rawprops" << std::endl;
+  std::vector<uint64_t> req_frame_no;
+  // Collect information about the virtual memory space
   for (Process &cur_proc : processes) {
     cur_proc.populateRanges(cmdopts);
     cur_proc.populatePages(cmdopts);
@@ -69,11 +72,17 @@ int main(int argc, char *argv[]) {
               << std::dec << cur_proc.getVPageRanges().size() << " ranges:" << std::endl;
     for (const VPageRange &vpr : cur_proc.getVPageRanges()) {
       std::clog << vpr << std::endl;
-      /*
       for (const VPage &vp : vpr.getVPages()) {
-        std::clog << "     " << vp << std::endl;
+        // std::clog << "     " << vp << std::endl;
+        if (vp.isPresentRAM() == true) {
+          req_frame_no.push_back(vp.getFrameNumber());
+        }
       }
-      */
     }
   }
+
+  // Now gather information about the physical frames used for mapping the
+  // virtual pages
+  PMemory pmem;
+  size_t added_frames = pmem.addPFrames(cmdopts, req_frame_no.begin(), req_frame_no.end());
 }
