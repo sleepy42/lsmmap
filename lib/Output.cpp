@@ -62,7 +62,7 @@ void printPageRangeHeadline(const CmdOptions &cmd_opts, std::ostream &stream) {
 }
 
 void printResults(const CmdOptions &cmd_opts, std::ostream &stream,
-    std::vector<Process> &processes, PMemory &pmem) {
+    const std::vector<Process> &processes, const PMemory &pmem) {
 
   // Store the format flags
   std::ios_base::fmtflags original_fmt_flags = stream.flags();

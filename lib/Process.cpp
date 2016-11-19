@@ -54,7 +54,7 @@ bool Process::checkForFiles(void) {
   if (S_ISDIR(dir_stat.st_mode) == false) {
     return false;
   }
-  
+
   // Now set path to the maps file. One would have to make sure that we do run
   // anywhere outside the /proc directory but... maybe later...
   maps_filepath = dir_path + "/maps";
@@ -79,7 +79,8 @@ bool Process::checkForFiles(void) {
  * such object holds information about the page range (such as access
  * permissions or the location in the address space) read from the process'
  * map file. Those ranges can later be populated with single pages. The function
- * returns the number of created page ranges.
+ * returns the number of created page ranges. Already existing ranges will be
+ * deleted.
  */
 size_t Process::populateRanges(const CmdOptions &cmd_opts) {
   // Store the format flags of the clog stream
@@ -357,6 +358,44 @@ size_t Process::populateRanges(const CmdOptions &cmd_opts) {
 }
 
 /**
+ * \brief Populates the process' page ranges.
+ *
+ * Populates the process' page ranges by creating a single \c VPageRange object.
+ * That range represents the address interval indicated by the arguments. The
+ * information from \c /proc/pid/maps are NOT used. Therefore null pages may
+ * occur. Already existing ranges will be deleted. The function returns the
+ * number of created ranges.
+ */
+size_t Process::populateRanges(const uint64_t lower_addr, const uint64_t upper_addr) {
+  if (upper_addr < lower_addr) {
+    return 0;
+  }
+
+  // Determine page size and compute according mask
+  const long proc_pagesize = sysconf(_SC_PAGESIZE);
+  const long proc_pageoffset_mask = proc_pagesize - 1;
+
+  // Now align the addresses to page size
+  uint64_t cur_vpr_lower_addr = lower_addr & (~proc_pageoffset_mask);
+  uint64_t cur_vpr_upper_addr = (upper_addr & (~proc_pageoffset_mask)) + proc_pagesize;
+
+  // Now create the range object
+  VPageRange cur_range(cur_vpr_lower_addr, cur_vpr_upper_addr, proc_pagesize);
+  cur_range.setVPRangeNumber(0);
+  cur_range.setReadP(VPageRange::TriState::Unknown);
+  cur_range.setWriteP(VPageRange::TriState::Unknown);
+  cur_range.setExecP(VPageRange::TriState::Unknown);
+  cur_range.setPrivateS(VPageRange::TriState::Unknown);
+  cur_range.setMappingOffset(0);
+  cur_range.setMappedFilePath("");
+  cur_range.setMappingType(VPageRange::MappingType::Mixed);
+  vp_ranges.clear();
+  vp_ranges.push_back(cur_range);
+
+  return vp_ranges.size();
+}
+
+/**
  * \brief Populates the ranges by creating \c VPage objects.
  *
  * Populates the page ranges by creating \c VPage objects that are inserted
@@ -395,7 +434,7 @@ size_t Process::populatePages(const CmdOptions &cmd_opts) {
     }
   }
   close(pagemap_file_fd);
-  
+
   // Restore format flags of clog
   std::clog.flags(original_clog_flags);
   return num_pages;
