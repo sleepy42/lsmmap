@@ -29,6 +29,7 @@ public:
   bool cmd_up_addr_userset;
   bool cmd_show_unmapped;
   bool cmd_verbose;
+  bool cmd_show_all_pages;
   PID_List_Ty cmd_req_pid;
 
   CmdOptions();

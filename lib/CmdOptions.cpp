@@ -8,6 +8,7 @@
 //          be cut if they cross any of the bounding addresses defined by -l/-u.
 // -n       Show unmapped address regions.
 // -v       Be verbose.
+// -a       Show all virtual pages and do NOT omit unmapped pages.
 //
 // Usage:
 // lsmmap [ -l <lower> ] [ -u <upper> ] [ -n ] [ -v ] [ <pid>... ]
@@ -103,7 +104,7 @@ CmdOptions::CmdOptions()
  : parsed_from_cmdl(false),
    cmd_lower_address(0), cmd_low_addr_userset(false),
    cmd_upper_address(std::numeric_limits<uint64_t>::max()), cmd_up_addr_userset(false),
-   cmd_show_unmapped(false), cmd_verbose(false) {
+   cmd_show_unmapped(false), cmd_verbose(false), cmd_show_all_pages(false) {
 }
 
 /**
@@ -120,8 +121,11 @@ CmdOptions::ErrorType CmdOptions::parseFromCommandLine(int argc, char *argv[]) {
 
   ErrorType errty = ErrorType::NoError;
   char c;
-  while ((c = getopt(argc, argv, "l:u:nv")) != -1) {
+  while ((c = getopt(argc, argv, "l:u:nva")) != -1) {
     switch(c) {
+      case 'a':
+        cmd_show_all_pages = true;
+        break;
       case 'l':
         if (str2ulong(optarg, &cmd_lower_address, 16) == true) {
           cmd_low_addr_userset = true;
