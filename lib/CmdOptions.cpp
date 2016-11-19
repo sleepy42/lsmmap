@@ -10,6 +10,14 @@
 // -v       Be verbose.
 // -a       Show all virtual pages and do NOT omit unmapped pages.
 //
+// Supported Modes:
+// -M       Default mode: Show mapping from virtual pages to physical frames.
+// -P       Page mode: The user MUST  specify an virtual address interval using
+//          the -l and -u option. The mapping for all contained virtual pages
+//          will be shown no matter if they are used/mapped or not.
+//   Note: The last program mode given will be used. Using multiple different
+//   modes is currently NOT detected.
+//
 // Usage:
 // lsmmap [ -l <lower> ] [ -u <upper> ] [ -n ] [ -v ] [ <pid>... ]
 //
@@ -104,7 +112,8 @@ CmdOptions::CmdOptions()
  : parsed_from_cmdl(false),
    cmd_lower_address(0), cmd_low_addr_userset(false),
    cmd_upper_address(std::numeric_limits<uint64_t>::max()), cmd_up_addr_userset(false),
-   cmd_show_unmapped(false), cmd_verbose(false), cmd_show_all_pages(false) {
+   cmd_show_unmapped(false), cmd_verbose(false), cmd_show_all_pages(false),
+   cmd_prog_mode(ProgMode::Mappings) {
 }
 
 /**
@@ -121,7 +130,7 @@ CmdOptions::ErrorType CmdOptions::parseFromCommandLine(int argc, char *argv[]) {
 
   ErrorType errty = ErrorType::NoError;
   char c;
-  while ((c = getopt(argc, argv, "l:u:nva")) != -1) {
+  while ((c = getopt(argc, argv, "l:u:nvaMP")) != -1) {
     switch(c) {
       case 'a':
         cmd_show_all_pages = true;
@@ -133,15 +142,21 @@ CmdOptions::ErrorType CmdOptions::parseFromCommandLine(int argc, char *argv[]) {
           cmd_lower_address = 0;
         }
         break;
+      case 'M':
+        cmd_prog_mode = ProgMode::Mappings;
+        break;
+      case 'n':
+        cmd_show_unmapped = true;
+        break;
+      case 'P':
+        cmd_prog_mode = ProgMode::Pages;
+        break;
       case 'u':
         if (str2ulong(optarg, &cmd_upper_address, 16) == true) {
           cmd_up_addr_userset = true;
         } else {
           cmd_upper_address = std::numeric_limits<uint64_t>::max();
         }
-        break;
-      case 'n':
-        cmd_show_unmapped = true;
         break;
       case 'v':
         cmd_verbose = true;

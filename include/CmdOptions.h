@@ -20,6 +20,7 @@ bool str2ulong(const std::string &str, unsigned long int *value = nullptr, int b
 class CmdOptions {
 public:
   enum class ErrorType {NoError = 0, Option, OptArg, PID};
+  enum class ProgMode {Mappings = 0, Pages};
   typedef std::vector<std::string> PID_List_Ty;
 
   bool parsed_from_cmdl;
@@ -30,6 +31,7 @@ public:
   bool cmd_show_unmapped;
   bool cmd_verbose;
   bool cmd_show_all_pages;
+  ProgMode cmd_prog_mode;
   PID_List_Ty cmd_req_pid;
 
   CmdOptions();
