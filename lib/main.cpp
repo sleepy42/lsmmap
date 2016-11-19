@@ -1,4 +1,5 @@
 #include "CmdOptions.h"
+#include "Output.h"
 #include "PMemory.h"
 #include "Process.h"
 
@@ -46,6 +47,7 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
+  #if 0
   // Print header lines
   std::clog << "no  "
             << " " << "from              " << " " << "to                "
@@ -80,9 +82,44 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+  #endif
 
-  // Now gather information about the physical frames used for mapping the
-  // virtual pages
+  // First gather information about page ranges and pages
+  for (Process &cur_proc : processes) {
+    cur_proc.populateRanges(cmdopts);
+    cur_proc.populatePages(cmdopts);
+  }
+  
+  // Now gather all required physical frames
+  std::vector<uint64_t> reqd_frames;
+  for (const Process &cur_proc : processes) {
+    for (const VPageRange &cur_vpr : cur_proc.getVPageRanges()) {
+      // Skip unmapped ranges as they should not require any valid frames
+      if (cur_vpr.getMappingType() == VPageRange::MappingType::Unmapped) {
+        continue;
+      }
+
+      for (const VPage &cur_vpage : cur_vpr.getVPages()) {
+        if (cur_vpage.arePagePropertiesValid() == false) {
+          continue;
+        }
+        // Only present pages map to a valid frame
+        if (cur_vpage.isPresentRAM() == false) {
+          continue;
+        }
+        if (cur_vpage.getFrameNumber() == 0) {
+          continue;
+        }
+        // Page maps to a frame so add its frame to the list of required frames
+        reqd_frames.push_back(cur_vpage.getFrameNumber());
+      }
+    }
+  }
+
+  // Now gather information about all required frames
   PMemory pmem;
-  size_t added_frames = pmem.addPFrames(cmdopts, req_frame_no.begin(), req_frame_no.end());
+  size_t added_frames = pmem.addPFrames(cmdopts, reqd_frames.begin(),
+      reqd_frames.end());
+
+  printResults(cmdopts, std::cout, processes, pmem);
 }
