@@ -47,43 +47,6 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
-  #if 0
-  // Print header lines
-  std::clog << "no  "
-            << " " << "from              " << " " << "to                "
-            << " " << "perm"
-            << " " << "#  "
-            << " " << "offset    "
-            << " " << "ty"
-            << "    " << "file" << std::endl;
-  std::clog << "    "
-            << " " << "address           "
-            << " " << "flgs"
-            << " " << "pfn             "
-            << " " << "swapoff        "
-            << " " << "swty"
-            << " " << "rawprops" << std::endl;
-  std::vector<uint64_t> req_frame_no;
-  // Collect information about the virtual memory space
-  for (Process &cur_proc : processes) {
-    cur_proc.populateRanges(cmdopts);
-    cur_proc.populatePages(cmdopts);
-    // Print found page ranges and pages
-    std::clog << "Process: " << cur_proc.getPID() << std::endl;
-    std::clog << "Found the following "
-              << std::dec << cur_proc.getVPageRanges().size() << " ranges:" << std::endl;
-    for (const VPageRange &vpr : cur_proc.getVPageRanges()) {
-      std::clog << vpr << std::endl;
-      for (const VPage &vp : vpr.getVPages()) {
-        // std::clog << "     " << vp << std::endl;
-        if (vp.isPresentRAM() == true) {
-          req_frame_no.push_back(vp.getFrameNumber());
-        }
-      }
-    }
-  }
-  #endif
-
   // First gather information about page ranges and pages
   for (Process &cur_proc : processes) {
     cur_proc.populateRanges(cmdopts);
@@ -118,8 +81,7 @@ int main(int argc, char *argv[]) {
 
   // Now gather information about all required frames
   PMemory pmem;
-  size_t added_frames = pmem.addPFrames(cmdopts, reqd_frames.begin(),
-      reqd_frames.end());
+  pmem.addPFrames(cmdopts, reqd_frames.begin(), reqd_frames.end());
 
   printResults(cmdopts, std::cout, processes, pmem);
 }

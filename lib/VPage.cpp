@@ -81,54 +81,69 @@ uint64_t VPage::getSwapOffset(void) const {
 std::ostream& operator<<(std::ostream &stream, const VPage &page) {
   // Save format flags
   std::ios_base::fmtflags original_flags = stream.flags();
+
+  const int width_vp_props = 5;
+  const int width_vp_pfn = 14;
+  const int width_vp_swapty = 2;
+  const int width_vp_swapoff = 13;
+  const int width_vp_raw = 16;
+
   // Print the start address of the page
-  stream << std::hex << std::uppercase << std::setfill('0');
-  stream << std::hex << "0x" << std::setw(16) << page.getStartAddress() << " ";
+  stream << std::hex << std::uppercase << std::right << std::setfill('0');
+  stream << "0x" << std::setw(16) << page.getStartAddress();
+  
   // Print the flags of the page
-  if (page.arePagePropertiesValid() == true) {
-    if (page.isPresentRAM() == true) {
-      stream << "p";
-    } else {
-      stream << "-";
-    }
-    if (page.isPresentSwap() == true) {
-      stream << "s";
-    } else {
-      stream << "-";
-    }
-    if (page.isFileMapped() == true) {
-      stream << "f";
-    } else {
-      stream << "-";
-    }
-    if (page.isSoftDirty() == true) {
-      stream << "d";
-    } else {
-      stream << "-";
-    }
-  } else {
-    stream << "****";
-  }
   stream << " ";
+  if (page.arePagePropertiesValid() == true) {
+    stream << ((page.isPresentRAM())?'p':'-');
+    stream << ((page.isPresentSwap())?'s':'-');
+    stream << ((page.isFileMapped())?'f':'-');
+    stream << ((page.isExclusive())?'e':'-');
+    stream << ((page.isSoftDirty())?'w':'-');
+  } else {
+    stream << std::left << std::setfill('?');
+    stream << std::setw(width_vp_props) << "?";
+  }
   // Print frame number and/or swap offset
+  stream << " ";
   if (page.arePagePropertiesValid() == true) {
     if (page.isPresentRAM() == true) {
-      stream << std::hex << "0x" << std::setw(14) << page.getFrameNumber();
+      stream << std::hex << std::uppercase << std::setfill('0') << std::right;
+      stream << "0x" << std::setw(width_vp_pfn) << page.getFrameNumber();
     } else {
-      stream << "****************";
+      stream << std::left << std::setfill('*');
+      stream << std::setw(width_vp_pfn+2) << "*";
     }
     stream << " ";
     if (page.isPresentSwap() == true) {
-      stream << std::hex << "0x" << std::setw(13) << page.getSwapOffset();
+      stream << std::dec << std::setfill('0') << std::right;
+      stream << std::setw(width_vp_swapty) << page.getSwapType();
       stream << " ";
-      stream << std::hex << "0x" << std::setw(2) << page.getSwapType();
+      stream << std::hex << std::uppercase << std::setfill('0') << std::right;
+      stream << "0x" << std::setw(width_vp_swapoff) << page.getSwapOffset();
     } else {
-      stream << "*************** ****";
+      stream << std::left << std::setfill('*');
+      stream << std::setw(width_vp_swapty) << "*";
+      stream << " ";
+      stream << std::setw(width_vp_swapoff+2) << "*";
     }
+  } else {
+    stream << std::setfill('?') << std::left;
+    stream << std::setw(width_vp_pfn+2) << "?";
+    stream << " ";
+    stream << std::setw(width_vp_swapty) << "?";
+    stream << " ";
+    stream << std::setw(width_vp_swapoff+2) << "?";
   }
   stream << " ";
   // Now print the raw property value
-  stream << std::hex << "0x" << std::setw(16) << page.getRawPageProperties();
+  if (page.arePagePropertiesValid() == true) {
+    stream << std::hex << std::uppercase << std::setfill('0') << std::right;
+    stream << std::setw(width_vp_raw) << page.getRawPageProperties();
+  } else {
+    stream << std::setfill('?') << std::right;
+    stream << std::setw(width_vp_raw+2) << "?";
+  }
   // Restore format flags
   stream.flags(original_flags);
   return stream;

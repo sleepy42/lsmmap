@@ -167,20 +167,22 @@ void printResults(const CmdOptions &cmd_opts, std::ostream &stream,
                                 && (cur_vpage.isPresentRAM()
                                  || cur_vpage.isPresentSwap()
                                  || (cur_vpage.getFrameNumber() != 0));
-          if ((isPageUsed == false) && (cmd_opts.cmd_show_all_pages == false)) {
-            // Skip the current page as it is not used
-            ++no_omitted_pages;
-            continue;
-          }
-          // Test if any pages were skipped
-          if (no_omitted_pages > 0) {
-            // Print the indention for each page
-            stream << std::setfill(' ') << std::left
-                   << std::setw(out_width_page_indent) << " ";
-            // Now the note that pages were skipped
-            stream << "[" << std::dec << no_omitted_pages
-                   << " page(s) omitted]" << std::endl;
-            no_omitted_pages = 0;
+          if (cmd_opts.cmd_show_all_pages == false) {
+            if (isPageUsed == false) {
+              // Skip the current page as it is not used
+              ++no_omitted_pages;
+              continue;
+            }
+            // Test if any pages were skipped
+            if (no_omitted_pages > 0) {
+              // Print the indention for each page
+              stream << std::setfill(' ') << std::left
+                     << std::setw(out_width_page_indent) << " ";
+              // Now the note that pages were skipped
+              stream << "[" << std::dec << no_omitted_pages
+                     << " page(s) omitted]" << std::endl;
+              no_omitted_pages = 0;
+            }
           }
           // Now print the page details
           // First some indention
@@ -208,7 +210,7 @@ void printResults(const CmdOptions &cmd_opts, std::ostream &stream,
             const PFrame& cur_pframe = pmem.getPFrameMap().at(cur_vpage.getFrameNumber());
             if (cur_pframe.areFramePropertiesValid() == false) {
               stream << "frameno:0x";
-              stream << std::hex << std::uppercase << std::setfill('0') << std::right;
+              stream << std::hex << std::uppercase << std::setfill('0') << std::left;
               stream << cur_vpage.getFrameNumber();
               continue;
             }
@@ -256,7 +258,7 @@ void printResults(const CmdOptions &cmd_opts, std::ostream &stream,
           } else if (cur_vpage.getFrameNumber() != 0) {
             // Page has frame number not 0
             stream << "frameno:0x";
-            stream << std::hex << std::uppercase << std::setfill('0') << std::right;
+            stream << std::hex << std::uppercase << std::setfill('0') << std::left;
             stream << cur_vpage.getFrameNumber();
           } else {
             // Page seems not to be mapped
