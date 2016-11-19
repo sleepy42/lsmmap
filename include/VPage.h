@@ -29,7 +29,6 @@ public:
   VPage(uint64_t startaddress);
 
   uint64_t getStartAddress(void) const;
-
   bool arePagePropertiesValid(void) const;
   uint64_t getRawPageProperties(void) const;
   void setRawPageProperties(uint64_t new_props, bool valid);

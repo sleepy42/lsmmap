@@ -16,8 +16,11 @@
 #include <type_traits>
 
 class PMemory {
+public:
+  typedef std::map<uint64_t, PFrame> PF_Map_Ty;
+
 private:
-  std::map<uint64_t, PFrame> p_frames;
+  PF_Map_Ty p_frames;
   uint64_t frame_size;
 
 protected:
@@ -33,6 +36,8 @@ public:
   , size_t>::type
   addPFrames(const CmdOptions &cmd_opts, It_Ty it_begin, It_Ty it_end);
   bool addPFrame(const CmdOptions &cmd_opts, uint64_t frame_no);
+
+  const PF_Map_Ty& getPFrameMap(void) const;
 };
 
 #include "PMemory.tcc"

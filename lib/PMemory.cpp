@@ -100,3 +100,7 @@ bool PMemory::addPFrame(const CmdOptions &cmd_opts, uint64_t frame_no) {
   std::clog.flags(original_clog_flags);
   return added_frame;
 }
+
+const PMemory::PF_Map_Ty& PMemory::getPFrameMap(void) const {
+  return p_frames;
+}
