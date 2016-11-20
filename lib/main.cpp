@@ -12,7 +12,8 @@ int main(int argc, char *argv[]) {
   CmdOptions cmdopts;
   CmdOptions::ErrorType opts_parsed = cmdopts.parseFromCommandLine(argc, argv);
   if ((opts_parsed == CmdOptions::ErrorType::Option)
-   || (opts_parsed == CmdOptions::ErrorType::OptArg)) {
+   || (opts_parsed == CmdOptions::ErrorType::OptArg)
+   || (opts_parsed == CmdOptions::ErrorType::PID)) {
     exit(-1);
   }
 
@@ -49,8 +50,13 @@ int main(int argc, char *argv[]) {
 
   // First gather information about page ranges and pages
   for (Process &cur_proc : processes) {
-    cur_proc.populateRanges(cmdopts);
-    cur_proc.populatePages(cmdopts);
+    if (cmdopts.cmd_prog_mode == CmdOptions::ProgMode::Mappings) {
+      cur_proc.populateFileRanges(cmdopts);
+      cur_proc.populatePages(cmdopts);
+    } else if (cmdopts.cmd_prog_mode == CmdOptions::ProgMode::Pages) {
+      cur_proc.populateMixedRange(cmdopts);
+      cur_proc.populatePages(cmdopts);
+    }
   }
   
   // Now gather all required physical frames

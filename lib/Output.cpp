@@ -154,125 +154,140 @@ void printResults(const CmdOptions &cmd_opts, std::ostream &stream,
       }
       stream << std::endl;
 
-      if ((cur_vpr.getMappingType() == VPageRange::MappingType::Anonymous)
-       || (cur_vpr.getMappingType() == VPageRange::MappingType::Filemapping)
-       || (cur_vpr.getMappingType() == VPageRange::MappingType::Mixed)) {
-        unsigned no_omitted_pages = 0;
-        for (const VPage &cur_vpage : cur_vpr.getVPages()) {
-          if (cur_vpage.arePagePropertiesValid() == false) {
-            ++no_omitted_pages;
-            continue;
-          }
-          const bool isPageUsed = cur_vpage.arePagePropertiesValid()
-                                && (cur_vpage.isPresentRAM()
-                                 || cur_vpage.isPresentSwap()
-                                 || (cur_vpage.getFrameNumber() != 0));
-          if (cmd_opts.cmd_show_all_pages == false) {
-            if (isPageUsed == false) {
-              // Skip the current page as it is not used
+      // Now print the mapping for each page
+      if (cmd_opts.cmd_only_vpranges == false) {
+        if ((cur_vpr.getMappingType() == VPageRange::MappingType::Anonymous)
+         || (cur_vpr.getMappingType() == VPageRange::MappingType::Filemapping)
+         || (cur_vpr.getMappingType() == VPageRange::MappingType::Mixed)) {
+          unsigned no_omitted_pages = 0;
+          for (const VPage &cur_vpage : cur_vpr.getVPages()) {
+            if (cur_vpage.arePagePropertiesValid() == false) {
               ++no_omitted_pages;
               continue;
             }
-            // Test if any pages were skipped
-            if (no_omitted_pages > 0) {
-              // Print the indention for each page
-              stream << std::setfill(' ') << std::left
-                     << std::setw(out_width_page_indent) << " ";
-              // Now the note that pages were skipped
-              stream << "[" << std::dec << no_omitted_pages
-                     << " page(s) omitted]" << std::endl;
-              no_omitted_pages = 0;
+            const bool isPageUsed = cur_vpage.arePagePropertiesValid()
+                                  && (cur_vpage.isPresentRAM()
+                                   || cur_vpage.isPresentSwap()
+                                   || (cur_vpage.getFrameNumber() != 0));
+            if (cmd_opts.cmd_show_all_pages == false) {
+              if (isPageUsed == false) {
+                // Skip the current page as it is not used
+                ++no_omitted_pages;
+                continue;
+              }
+              // Test if any pages were skipped
+              if (no_omitted_pages > 0) {
+                // Print the indention for each page
+                stream << std::setfill(' ') << std::left
+                       << std::setw(out_width_page_indent) << " ";
+                // Now the note that pages were skipped
+                stream << "[" << std::dec << no_omitted_pages
+                       << " page" << ((no_omitted_pages != 1)?"s":"")
+                       << " omitted]" << std::endl;
+                no_omitted_pages = 0;
+              }
             }
-          }
-          // Now print the page details
-          // First some indention
-          stream << std::setfill(' ') << std::left
-                 << std::setw(out_width_page_indent) << " ";
-          // First entry is the start address
-          stream << std::hex << std::uppercase << std::setfill('0') << std::right;
-          stream << "0x" << std::setw(out_width_page_startaddr) << cur_vpage.getStartAddress();
-          // Now some page propertiers
-          stream << " ";
-          stream << getBoolChar(cur_vpage.isPresentRAM(), 'p');
-          stream << getBoolChar(cur_vpage.isPresentSwap(), 's');
-          stream << getBoolChar(cur_vpage.isFileMapped(), 'f');
-          stream << getBoolChar(cur_vpage.isExclusive(), 'e');
-          stream << getBoolChar(cur_vpage.isSoftDirty(), 'd');
-          // Now the location the page is mapped to
-          stream << " -> ";
-          if (cur_vpage.isPresentRAM() == true) {
-            // The current page is present in RAM
-            if (pmem.getPFrameMap().count(cur_vpage.getFrameNumber()) <= 0) {
-              stream << "[null]" << std::endl;
-              continue;
-            }
-            // Next fetch the corresponding frame
-            const PFrame& cur_pframe = pmem.getPFrameMap().at(cur_vpage.getFrameNumber());
-            if (cur_pframe.areFramePropertiesValid() == false) {
+            // Now print the page details
+            // First some indention
+            stream << std::setfill(' ') << std::left
+                   << std::setw(out_width_page_indent) << " ";
+            // First entry is the start address
+            stream << std::hex << std::uppercase << std::setfill('0') << std::right;
+            stream << "0x" << std::setw(out_width_page_startaddr) << cur_vpage.getStartAddress();
+            // Now some page propertiers
+            stream << " ";
+            stream << getBoolChar(cur_vpage.isPresentRAM(), 'p');
+            stream << getBoolChar(cur_vpage.isPresentSwap(), 's');
+            stream << getBoolChar(cur_vpage.isFileMapped(), 'f');
+            stream << getBoolChar(cur_vpage.isExclusive(), 'e');
+            stream << getBoolChar(cur_vpage.isSoftDirty(), 'd');
+            // Now the location the page is mapped to
+            stream << " -> ";
+            if (cur_vpage.isPresentRAM() == true) {
+              // The current page is present in RAM
+              if (pmem.getPFrameMap().count(cur_vpage.getFrameNumber()) <= 0) {
+                stream << "[null]" << std::endl;
+                continue;
+              }
+              // Next fetch the corresponding frame
+              const PFrame& cur_pframe = pmem.getPFrameMap().at(cur_vpage.getFrameNumber());
+              if (cur_pframe.areFramePropertiesValid() == false) {
+                stream << "frameno:0x";
+                stream << std::hex << std::uppercase << std::setfill('0') << std::left;
+                stream << cur_vpage.getFrameNumber();
+                continue;
+              }
+              // Now print the start address of the frame
+              stream << std::hex << std::uppercase << std::setfill('0') << std::right;
+              stream << "0x" << std::setw(out_width_frame_startaddr) << cur_pframe.getStartAddress();
+              // Now print the frame properties
+              stream << " ";
+              stream << getBoolChar(cur_pframe.isLocked(), 'l');
+              stream << getBoolChar(cur_pframe.hasError(), 'e');
+              stream << getBoolChar(cur_pframe.isReferenced(), 'r');
+              stream << getBoolChar(cur_pframe.isUpToDate(), 'u');
+              stream << getBoolChar(cur_pframe.isDirty(), 'd');
+              stream << getBoolChar(cur_pframe.isInLRU(), 'l');
+              stream << getBoolChar(cur_pframe.isInActiveLRU(), 'a');
+              stream << getBoolChar(cur_pframe.bySLAB(), 's');
+
+              stream << getBoolChar(cur_pframe.isWriteback(), 'w');
+              stream << getBoolChar(cur_pframe.isReclaim(), 'r');
+              stream << getBoolChar(cur_pframe.byBuddy(), 'b');
+              stream << getBoolChar(cur_pframe.isMemMapped(), 'm');
+              stream << getBoolChar(cur_pframe.isAnonMapped(), 'a');
+              stream << getBoolChar(cur_pframe.hasSwapCache(), 's');
+              stream << getBoolChar(cur_pframe.isSwapBacked(), 's');
+              stream << getBoolChar(cur_pframe.isCompdHead(), 'c');
+
+              stream << getBoolChar(cur_pframe.isCompdTail(), 'c');
+              stream << getBoolChar(cur_pframe.isHuge(), 'h');
+              stream << getBoolChar(cur_pframe.isUnevictable(), 'u');
+              stream << getBoolChar(cur_pframe.isHWPoison(), 'p');
+              stream << getBoolChar(cur_pframe.isNoFrame(), 'n');
+              stream << getBoolChar(cur_pframe.isKSM(), 'k');
+              stream << getBoolChar(cur_pframe.isTHP(), 't');
+              stream << getBoolChar(cur_pframe.isBalloon(), 'b');
+
+              stream << getBoolChar(cur_pframe.isZeroFrame(), 'z');
+              stream << getBoolChar(cur_pframe.isIdle(), 'i');
+            } else if (cur_vpage.isPresentSwap() == true) {
+              // The current page is swapped
+              stream << "swap:";
+              stream << std::dec << std::setfill('0') << std::left;
+              stream << cur_vpage.getSwapType();
+              stream << std::hex << std::uppercase << std::setfill('0') << std::left;
+              stream << "@0x" << cur_vpage.getSwapOffset();
+            } else if (cur_vpage.getFrameNumber() != 0) {
+              // Page has frame number not 0
               stream << "frameno:0x";
               stream << std::hex << std::uppercase << std::setfill('0') << std::left;
               stream << cur_vpage.getFrameNumber();
-              continue;
+            } else {
+              // Page seems not to be mapped
+              stream << "[null]";
             }
-            // Now print the start address of the frame
-            stream << std::hex << std::uppercase << std::setfill('0') << std::right;
-            stream << "0x" << std::setw(out_width_frame_startaddr) << cur_pframe.getStartAddress();
-            // Now print the frame properties
-            stream << " ";
-            stream << getBoolChar(cur_pframe.isLocked(), 'l');
-            stream << getBoolChar(cur_pframe.hasError(), 'e');
-            stream << getBoolChar(cur_pframe.isReferenced(), 'r');
-            stream << getBoolChar(cur_pframe.isUpToDate(), 'u');
-            stream << getBoolChar(cur_pframe.isDirty(), 'd');
-            stream << getBoolChar(cur_pframe.isInLRU(), 'l');
-            stream << getBoolChar(cur_pframe.isInActiveLRU(), 'a');
-            stream << getBoolChar(cur_pframe.bySLAB(), 's');
-
-            stream << getBoolChar(cur_pframe.isWriteback(), 'w');
-            stream << getBoolChar(cur_pframe.isReclaim(), 'r');
-            stream << getBoolChar(cur_pframe.byBuddy(), 'b');
-            stream << getBoolChar(cur_pframe.isMemMapped(), 'm');
-            stream << getBoolChar(cur_pframe.isAnonMapped(), 'a');
-            stream << getBoolChar(cur_pframe.hasSwapCache(), 's');
-            stream << getBoolChar(cur_pframe.isSwapBacked(), 's');
-            stream << getBoolChar(cur_pframe.isCompdHead(), 'c');
-
-            stream << getBoolChar(cur_pframe.isCompdTail(), 'c');
-            stream << getBoolChar(cur_pframe.isHuge(), 'h');
-            stream << getBoolChar(cur_pframe.isUnevictable(), 'u');
-            stream << getBoolChar(cur_pframe.isHWPoison(), 'p');
-            stream << getBoolChar(cur_pframe.isNoFrame(), 'n');
-            stream << getBoolChar(cur_pframe.isKSM(), 'k');
-            stream << getBoolChar(cur_pframe.isTHP(), 't');
-            stream << getBoolChar(cur_pframe.isBalloon(), 'b');
-
-            stream << getBoolChar(cur_pframe.isZeroFrame(), 'z');
-            stream << getBoolChar(cur_pframe.isIdle(), 'i');
-          } else if (cur_vpage.isPresentSwap() == true) {
-            // The current page is swapped
-            stream << "swap:";
-            stream << std::dec << std::setfill('0') << std::left;
-            stream << cur_vpage.getSwapType();
-            stream << std::hex << std::uppercase << std::setfill('0') << std::left;
-            stream << "@0x" << cur_vpage.getSwapOffset();
-          } else if (cur_vpage.getFrameNumber() != 0) {
-            // Page has frame number not 0
-            stream << "frameno:0x";
-            stream << std::hex << std::uppercase << std::setfill('0') << std::left;
-            stream << cur_vpage.getFrameNumber();
-          } else {
-            // Page seems not to be mapped
-            stream << "[null]";
+            stream << std::endl;
+          } // End of page loop
+          // Test if any pages were skipped at the end of the range
+          if (no_omitted_pages > 0) {
+            if ((cur_vpr.num() > 0) && (no_omitted_pages == cur_vpr.num())) {
+              stream << std::setfill(' ') << std::left
+                     << std::setw(out_width_page_indent) << " ";
+              stream << "[all pages omitted]" << std::endl;
+            } else {
+              stream << std::setfill(' ') << std::left
+                     << std::setw(out_width_page_indent) << " ";
+              stream << "[" << std::dec << no_omitted_pages
+                     << " page" << ((no_omitted_pages != 1)?"s":"")
+                     << " omitted]" << std::endl;
+              no_omitted_pages = 0;
+            }
           }
-          stream << std::endl;
-        } // End of page loop
-        // Test if any pages were skipped at the end of the range
-        if (no_omitted_pages > 0) {
-          stream << std::setfill(' ') << std::left
-                 << std::setw(out_width_page_indent) << " ";
-          stream << "[" << std::dec << no_omitted_pages
-                 << " page(s) omitted]" << std::endl;
-          no_omitted_pages = 0;
+        }
+      } else {
+        if (cmd_opts.cmd_prog_mode == CmdOptions::ProgMode::Pages) {
+          stream << "Omit option \"-r\" to show mappings for each page." << std::endl;
         }
       }
     } // End of pagerange loop

@@ -82,7 +82,7 @@ bool Process::checkForFiles(void) {
  * returns the number of created page ranges. Already existing ranges will be
  * deleted.
  */
-size_t Process::populateRanges(const CmdOptions &cmd_opts) {
+size_t Process::populateFileRanges(const CmdOptions &cmd_opts) {
   // Store the format flags of the clog stream
   std::ios_base::fmtflags original_clog_flags = std::clog.flags();
   // Open the stream to the /proc/pid/maps file
@@ -366,8 +366,12 @@ size_t Process::populateRanges(const CmdOptions &cmd_opts) {
  * occur. Already existing ranges will be deleted. The function returns the
  * number of created ranges.
  */
-size_t Process::populateRanges(const uint64_t lower_addr, const uint64_t upper_addr) {
-  if (upper_addr < lower_addr) {
+size_t Process::populateMixedRange(const CmdOptions &cmd_opts) {
+  if ((cmd_opts.cmd_low_addr_userset == false)
+   || (cmd_opts.cmd_up_addr_userset == false)) {
+    return 0;
+  }
+  if (cmd_opts.cmd_upper_address < cmd_opts.cmd_lower_address) {
     return 0;
   }
 
@@ -376,8 +380,8 @@ size_t Process::populateRanges(const uint64_t lower_addr, const uint64_t upper_a
   const long proc_pageoffset_mask = proc_pagesize - 1;
 
   // Now align the addresses to page size
-  uint64_t cur_vpr_lower_addr = lower_addr & (~proc_pageoffset_mask);
-  uint64_t cur_vpr_upper_addr = (upper_addr & (~proc_pageoffset_mask)) + proc_pagesize;
+  uint64_t cur_vpr_lower_addr = cmd_opts.cmd_lower_address & (~proc_pageoffset_mask);
+  uint64_t cur_vpr_upper_addr = (cmd_opts.cmd_upper_address & (~proc_pageoffset_mask)) + proc_pagesize;
 
   // Now create the range object
   VPageRange cur_range(cur_vpr_lower_addr, cur_vpr_upper_addr, proc_pagesize);

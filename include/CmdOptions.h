@@ -32,6 +32,7 @@ public:
   bool cmd_verbose;
   bool cmd_show_all_pages;
   ProgMode cmd_prog_mode;
+  bool cmd_only_vpranges;
   PID_List_Ty cmd_req_pid;
 
   CmdOptions();

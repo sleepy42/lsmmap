@@ -32,8 +32,8 @@ public:
   std::string getPageMapFilePath(void) const;
   const VPR_List_Ty& getVPageRanges(void) const;
 
-  size_t populateRanges(const CmdOptions &cmd_opts);
-  size_t populateRanges(const uint64_t lower_addr, const uint64_t upper_addr);
+  size_t populateMixedRange(const CmdOptions &cmd_opts);
+  size_t populateFileRanges(const CmdOptions &cmd_opts);
   size_t populatePages(const CmdOptions &cmd_opts);
 };
 

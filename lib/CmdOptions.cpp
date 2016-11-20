@@ -113,7 +113,7 @@ CmdOptions::CmdOptions()
    cmd_lower_address(0), cmd_low_addr_userset(false),
    cmd_upper_address(std::numeric_limits<uint64_t>::max()), cmd_up_addr_userset(false),
    cmd_show_unmapped(false), cmd_verbose(false), cmd_show_all_pages(false),
-   cmd_prog_mode(ProgMode::Mappings) {
+   cmd_prog_mode(ProgMode::Mappings), cmd_only_vpranges(false) {
 }
 
 /**
@@ -130,7 +130,7 @@ CmdOptions::ErrorType CmdOptions::parseFromCommandLine(int argc, char *argv[]) {
 
   ErrorType errty = ErrorType::NoError;
   char c;
-  while ((c = getopt(argc, argv, "l:u:nvaMP")) != -1) {
+  while ((c = getopt(argc, argv, "l:u:nvarMP")) != -1) {
     switch(c) {
       case 'a':
         cmd_show_all_pages = true;
@@ -150,6 +150,9 @@ CmdOptions::ErrorType CmdOptions::parseFromCommandLine(int argc, char *argv[]) {
         break;
       case 'P':
         cmd_prog_mode = ProgMode::Pages;
+        break;
+      case 'r':
+        cmd_only_vpranges = true;
         break;
       case 'u':
         if (str2ulong(optarg, &cmd_upper_address, 16) == true) {
@@ -180,6 +183,14 @@ CmdOptions::ErrorType CmdOptions::parseFromCommandLine(int argc, char *argv[]) {
   } else {
     // If no process ids are given add the self id.
     cmd_req_pid.push_back("self");
+  }
+  // Make sure that consistent options are given
+  if (cmd_prog_mode == ProgMode::Pages) {
+    if ((cmd_low_addr_userset == false)
+     || (cmd_up_addr_userset == false)) {
+      std::cerr << "-P mode cannot be used without specifying -l and -u!" << std::endl;
+      errty = ErrorType::Option;
+    }
   }
 
   parsed_from_cmdl = true;
