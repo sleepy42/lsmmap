@@ -3,6 +3,7 @@
 #include "PMemory.h"
 #include "Process.h"
 
+#include <cstdlib>
 #include <iostream>
 #include <limits>
 #include <string>
@@ -11,10 +12,12 @@
 int main(int argc, char *argv[]) {
   CmdOptions cmdopts;
   CmdOptions::ErrorType opts_parsed = cmdopts.parseFromCommandLine(argc, argv);
-  if ((opts_parsed == CmdOptions::ErrorType::Option)
-   || (opts_parsed == CmdOptions::ErrorType::OptArg)
+  if (opts_parsed == CmdOptions::ErrorType::ShowHelp) {
+    printHelpMessage(std::cout);
+    exit(EXIT_SUCCESS);
+  } else if ((opts_parsed == CmdOptions::ErrorType::Option)
    || (opts_parsed == CmdOptions::ErrorType::PID)) {
-    exit(-1);
+    exit(EXIT_FAILURE);
   }
 
   // Validate pids and create process objects
@@ -45,7 +48,7 @@ int main(int argc, char *argv[]) {
 
   if (processes.size() <= 0) {
     std::cerr << "No pids to process!" << std::endl;
-    exit(-1);
+    exit(EXIT_FAILURE);
   }
 
   // First gather information about page ranges and pages
@@ -90,4 +93,5 @@ int main(int argc, char *argv[]) {
   pmem.addPFrames(cmdopts, reqd_frames.begin(), reqd_frames.end());
 
   printResults(cmdopts, std::cout, processes, pmem);
+  exit(EXIT_SUCCESS);
 }

@@ -18,6 +18,7 @@
 inline char getTristateChar(const VPageRange::TriState &val, char TrueC,
     char FalseC = '-', char UnknownC = '?');
 inline char getBoolChar(const bool val, char TrueC, char FalseC = '-');
+void printHelpMessage(std::ostream &stream);
 void printPageRangeHeadline(const CmdOptions &cmd_opts, std::ostream &stream);
 void printResults(const CmdOptions &cmd_opts, std::ostream &stream,
     const std::vector<Process> &processes, const PMemory &pmem);

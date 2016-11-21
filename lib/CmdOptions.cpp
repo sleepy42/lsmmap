@@ -9,6 +9,9 @@
 // -n       Show unmapped address regions.
 // -v       Be verbose.
 // -a       Show all virtual pages and do NOT omit unmapped pages.
+// -r       Only show the virtual page ranges and omit listing the mapping for
+//          each single page.
+// -h       Print help message.
 //
 // Supported Modes:
 // -M       Default mode: Show mapping from virtual pages to physical frames.
@@ -19,7 +22,7 @@
 //   modes is currently NOT detected.
 //
 // Usage:
-// lsmmap [ -l <lower> ] [ -u <upper> ] [ -n ] [ -v ] [ <pid>... ]
+// lsmmap [ -l <lower> ] [ -u <upper> ] [ -n ] [ -v ] [ <pids>... ]
 //
 //===----------------------------------------------------------------------===//
 
@@ -130,10 +133,13 @@ CmdOptions::ErrorType CmdOptions::parseFromCommandLine(int argc, char *argv[]) {
 
   ErrorType errty = ErrorType::NoError;
   char c;
-  while ((c = getopt(argc, argv, "l:u:nvarMP")) != -1) {
+  while ((c = getopt(argc, argv, "hl:u:nvarMP")) != -1) {
     switch(c) {
       case 'a':
         cmd_show_all_pages = true;
+        break;
+      case 'h':
+        return ErrorType::ShowHelp;
         break;
       case 'l':
         if (str2ulong(optarg, &cmd_lower_address, 16) == true) {

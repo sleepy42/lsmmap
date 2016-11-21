@@ -19,7 +19,7 @@ bool str2ulong(const std::string &str, unsigned long int *value = nullptr, int b
 
 class CmdOptions {
 public:
-  enum class ErrorType {NoError = 0, Option, OptArg, PID};
+  enum class ErrorType {NoError = 0, Option, PID, ShowHelp};
   enum class ProgMode {Mappings = 0, Pages};
   typedef std::vector<std::string> PID_List_Ty;
 

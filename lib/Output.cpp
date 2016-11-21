@@ -41,6 +41,58 @@ char getBoolChar(const bool val, char TrueC, char FalseC) {
   }
 }
 
+void printHelpMessage(std::ostream &stream) {
+  stream << "lsmmap - version 0.1" << std::endl << std::endl;
+  stream << "lsmmap lists the mapping from virtual page address to "
+         << "its " << std::endl
+         << "physical frame address for the specified processes." << std::endl;
+  stream << std::endl;
+  stream << "Usage:" << std::endl
+         << "lsmmap [OPTIONS] [PROCESSIDs]" << std::endl;
+  stream << std::endl;
+  stream << "OPTIONS:" << std::endl;
+  stream << "  -a     Show mapping for all virtual pages and do not " << std::endl
+         << "         omit unmapped pages." << std::endl;
+  stream << "  -h     Print this help message." << std::endl;
+  stream << "  -l x   Use x as lower address and limit the list of " << std::endl
+         << "         mappings to all pages and ranges that have a " << std::endl
+         << "         higher addresses." << std::endl;
+  stream << "  -M     Use mappings mode. Virtual page ranges will be " << std::endl
+         << "         read from /proc and for each mapped page the " << std::endl
+         << "         corresponding physical frame will be determined " << std::endl
+         << "         (if available). The mapping of ranges and pages " << std::endl
+         << "         will be printed." << std::endl;
+  stream << "  -n     Do also list virtual page ranges that are " << std::endl
+         << "         not mapped (for those ranges no mapping " << std::endl
+         << "         for single pages will be shown)." << std::endl;
+  stream << "  -P     Use pages-only mode. In this mode the -l and -u " << std::endl
+         << "         options MUST be specified by the user! Then all " << std::endl
+         << "         the mapping for all virtual pages within that " << std::endl
+         << "         interval will be shown (no matter if the pages " << std::endl
+         << "         are actually mapped or not)." << std::endl;
+  stream << "  -r     Do only list the page ranges and omit the " << std::endl
+         << "         mapping for each single page." << std::endl;
+  stream << "  -u x   Use x as upper address and limit the list of " << std::endl
+         << "         mappings to all pages and ranges that have a " << std::endl
+         << "         lower address." << std::endl;
+  stream << std::endl;
+  stream << "PROCESSIDs:" << std::endl;
+  stream << "  The ids of the processes whose address spaces should " << std::endl
+         << "  be examined. Several process ids can be given. A " << std::endl
+         << "  seperate list of mappings will printed for each given " << std::endl
+         << "  process. For each process there must be an accessible " << std::endl
+         << "  directory (with the pid as its name) in /proc. Wihtin " << std::endl
+         << "  that directory the accessible files \"maps\" and \"pagemap\" " << std::endl
+         << "  must exist. A process id is a positive integer value. " << std::endl
+         << "  The special pid \"self\" is allowed and refers to the " << std::endl
+         << "  lsmmap process itself. It is also used as default if " << std::endl
+         << "  no pid is given at all." << std::endl
+         << "  Furthermore the file /proc/kpageflags must be " << std::endl
+         << "  accessible." << std::endl << std::endl
+         << "  To make sure that the shown addresses and flags are " << std::endl
+         << "  correct the program should be run as root." << std::endl;
+}
+
 void printPageRangeHeadline(const CmdOptions &cmd_opts, std::ostream &stream) {
   stream << std::setfill(' ') << std::left;
   stream << std::setw(out_width_range_no) << "no";
@@ -205,12 +257,14 @@ void printResults(const CmdOptions &cmd_opts, std::ostream &stream,
             stream << " -> ";
             if (cur_vpage.isPresentRAM() == true) {
               // The current page is present in RAM
-              if (pmem.getPFrameMap().count(cur_vpage.getFrameNumber()) <= 0) {
+              const PMemory::PF_Map_Ty::const_iterator cur_pframe_iter = 
+                  pmem.getPFrameMap().find(cur_vpage.getFrameNumber());
+              if (cur_pframe_iter == pmem.getPFrameMap().end()) {
                 stream << "[null]" << std::endl;
                 continue;
               }
               // Next fetch the corresponding frame
-              const PFrame& cur_pframe = pmem.getPFrameMap().at(cur_vpage.getFrameNumber());
+              const PFrame &cur_pframe = cur_pframe_iter->second;
               if (cur_pframe.areFramePropertiesValid() == false) {
                 stream << "frameno:0x";
                 stream << std::hex << std::uppercase << std::setfill('0') << std::left;
