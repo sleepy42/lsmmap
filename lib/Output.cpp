@@ -21,6 +21,7 @@ static const int out_width_page_maptosign = 4;
 static const int out_width_page_swapty = 2;
 static const int out_width_page_swapoff = 13;
 static const int out_width_frame_startaddr = 12;
+static const int out_width_frame_properties = 26;
 static const int out_width_frame_refcnt = 3;
 
 char getTristateChar(const VPageRange::TriState &val, char TrueC,
@@ -95,6 +96,9 @@ void printHelpMessage(std::ostream &stream) {
 }
 
 void printPageRangeHeadline(const CmdOptions &cmd_opts, std::ostream &stream) {
+  // Store the format flags
+  std::ios_base::fmtflags original_fmt_flags = stream.flags();
+  // Print headline
   stream << std::setfill(' ') << std::left;
   stream << std::setw(out_width_range_no) << "no";
   stream << " ";
@@ -112,16 +116,46 @@ void printPageRangeHeadline(const CmdOptions &cmd_opts, std::ostream &stream) {
   stream << std::setw(out_width_range_filesep) << " ";
   stream << "file";
   stream << std::endl;
+  // Restore format flags
+  stream.flags(original_fmt_flags);
+}
+
+void printMappingHeadline(const CmdOptions &cmd_opts, std::ostream &stream) {
+  // Store the format flags
+  std::ios_base::fmtflags original_fmt_flags = stream.flags();
+  // Print headline for RAM-present frames
+  stream << std::setfill(' ') << std::left;
+  stream << std::setw(out_width_page_indent) << " ";
+  stream << std::setw(out_width_page_startaddr+2) << "page_addr";
+  stream << " ";
+  stream << std::setw(out_width_page_props) << "props";
+  stream << " -> ";
+  stream << std::setw(out_width_frame_startaddr+2) << "frame_addr";
+  stream << " ";
+  stream << std::setw(out_width_frame_properties) << "props";
+  stream << " ";
+  stream << std::setw(out_width_frame_refcnt) << "ref";
+  stream << std::endl;
+  // Print headline for Swap-present frames
+  stream << std::setfill(' ') << std::left;
+  const int skip_width = out_width_page_indent + out_width_page_startaddr
+      + out_width_page_props + 3;
+  stream << std::setw(skip_width) << " ";
+  stream << " -> ";
+  stream << "swap:ty@offset";
+  stream << std::endl;
+  // Restore format flags
+  stream.flags(original_fmt_flags);
 }
 
 void printResults(const CmdOptions &cmd_opts, std::ostream &stream,
     const std::vector<Process> &processes, const PMemory &pmem) {
-
   // Store the format flags
   std::ios_base::fmtflags original_fmt_flags = stream.flags();
 
   // First the headlines should be printed
   printPageRangeHeadline(cmd_opts, stream);
+  printMappingHeadline(cmd_opts, stream);
 
   // Now print one line for each process
   for (const Process &cur_proc : processes) {
