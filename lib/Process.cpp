@@ -233,7 +233,7 @@ size_t Process::populateFileRanges(const CmdOptions &cmd_opts) {
 
     // Now go to the inode number
     uint64_t inode = 0;
-    // First skip deice id
+    // First skip device id
     maps_file >> std::hex >> inode;
     maps_file.ignore();
     maps_file >> std::hex >> inode;
@@ -247,15 +247,33 @@ size_t Process::populateFileRanges(const CmdOptions &cmd_opts) {
     }
     if (maps_file.good() == false) break;
 
-    // Now read the file if needed
-    if (inode != 0) {
-      std::string cur_mappedfile;
-      maps_file >> cur_mappedfile;
-      cur_range.setMappedFilePath(cur_mappedfile);
-    }
-
+    // Now read the file (it might happen that there is no file)
+    // We do this by hand as getline does not skip leading whitespaces. So
+    // first skip leading whitespaces
+    do {
+      int next_char = maps_file.peek();
+      if (isspace(next_char) != 0) {
+        if ((next_char != '\n') && (next_char != EOF)) {
+          // The next char is a whitespace so extract it from the stream
+          maps_file.ignore();
+        } else {
+          // We found the newline so it seems as if there is no filename at all
+          // But we do not extract the newline from the stream intentionally
+          break;
+        }
+      } else {
+        // We found the newline so it seems as if there is no filename at all
+        // But we do not extract the newline from the stream intentionally
+        break;
+      }
+    } while (true);
+    // Now extract the provided filename (meaning everything remaining in the
+    // current line)
+    std::string cur_mappedfile;
+    getline(maps_file, cur_mappedfile);
+    cur_range.setMappedFilePath(cur_mappedfile);
     // Now ignore the remainder of the line
-    maps_file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    // maps_file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     // The object seems to be valid else we would have jumped out of the loop
     // would have continued
     tmp_ranges.push_back(cur_range);

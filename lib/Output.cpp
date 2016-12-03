@@ -232,12 +232,14 @@ void printResults(const CmdOptions &cmd_opts, std::ostream &stream,
       }
 
       // Now print the mapped file or the "[null]" indicator
-      if (cur_vpr.getMappingType() == VPageRange::MappingType::Filemapping) {
-        stream << std::setfill(' ') << std::left << std::setw(out_width_range_filesep) << " ";
-        stream << cur_vpr.getMappedFilePath();
-      } else if (cur_vpr.getMappingType() == VPageRange::MappingType::Unmapped) {
+      if (cur_vpr.getMappingType() == VPageRange::MappingType::Unmapped) {
         stream << std::setfill(' ') << std::left << std::setw(out_width_range_filesep) << " ";
         stream << "[null]";
+      } else {
+        if (cur_vpr.getMappedFilePath().empty() == false) {
+          stream << std::setfill(' ') << std::left << std::setw(out_width_range_filesep) << " ";
+          stream << cur_vpr.getMappedFilePath();
+        }
       }
       stream << std::endl;
 

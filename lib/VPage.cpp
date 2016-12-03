@@ -91,7 +91,7 @@ std::ostream& operator<<(std::ostream &stream, const VPage &page) {
   // Print the start address of the page
   stream << std::hex << std::uppercase << std::right << std::setfill('0');
   stream << "0x" << std::setw(16) << page.getStartAddress();
-  
+
   // Print the flags of the page
   stream << " ";
   if (page.arePagePropertiesValid() == true) {
