@@ -28,8 +28,9 @@ PMemory::PMemory(void)
  * \c /proc/kpageflags file). If everything is fine \c true is returned. In case
  * of an error the function returns \c false.
  */
-bool PMemory::addPFrame(uint64_t frame_no, const int flags_fd) {
-  if (flags_fd < 0) {
+bool PMemory::addPFrame(uint64_t frame_no, const int flags_fd,
+    const int refcount_fd) {
+  if ((flags_fd < 0) || (refcount_fd < 0)) {
     return false;
   }
   // Frame number must not be aligned as it is NOT the start address
@@ -42,19 +43,33 @@ bool PMemory::addPFrame(uint64_t frame_no, const int flags_fd) {
   const off_t ff_offset = frame_no * (64 / CHAR_BIT);
   if (lseek(flags_fd, ff_offset, SEEK_SET) == -1) {
     std::cerr << "Failed to position in frameflags file." << std::endl;
-    perror("lseek:");
+    perror("lseek(refcnt):");
+    return false;
+  }
+  if (lseek(refcount_fd, ff_offset, SEEK_SET) == -1) {
+    std::cerr << "Failed to position in frame refcount file." << std::endl;
+    perror("lseek(flags):");
     return false;
   }
   // Now read the frame flags
-  uint64_t frame_flags = 0;
-  ssize_t read_bytes = read(flags_fd, &frame_flags, sizeof(frame_flags));
-  if (read_bytes == -1) {
-    std::cerr << "Could not properly from frameflags file!" << std::endl;
-    perror("read:");
+  uint64_t frame_flags = 0; ssize_t read_flags_bytes = 0;
+  uint64_t frame_refcnt = 0; ssize_t read_refcnt_bytes = 0;
+  read_flags_bytes = read(flags_fd, &frame_flags, sizeof(frame_flags));
+  if (read_flags_bytes == -1) {
+    std::cerr << "Could not properly read from frameflags file!" << std::endl;
+    perror("read(flags):");
     return false;
-  } else if (read_bytes == sizeof(frame_flags)) {
+  }
+  read_refcnt_bytes = read(refcount_fd, &frame_refcnt, sizeof(frame_refcnt));
+  if (read_refcnt_bytes == -1) {
+    std::cerr << "Could not properly read from frame refcount file!" << std::endl;
+    perror("read(refcnt):");
+    return false;
+  }
+  // Now set properties of pframe
+  if ((read_flags_bytes == sizeof(frame_flags)) && (read_refcnt_bytes == sizeof(frame_refcnt))) {
     PFrame cur_frame(frame_no * frame_size);
-    cur_frame.setRawFrameProperties(frame_flags, true);
+    cur_frame.setRawFrameProperties(frame_flags, frame_refcnt, true);
     p_frames.insert(std::make_pair(frame_no, cur_frame));
     return true;
   }
@@ -76,9 +91,11 @@ bool PMemory::addPFrame(uint64_t frame_no, const int flags_fd) {
  */
 bool PMemory::addPFrame(const CmdOptions &cmd_opts, uint64_t frame_no) {
   const std::string frameflags_file("/proc/kpageflags");
+  const std::string framerefcnt_file("/proc/kpagecount");
   // Store format flags of clog
   std::ios_base::fmtflags original_clog_flags = std::clog.flags();
-  int frameflags_file_fd = open(frameflags_file.c_str(), O_RDONLY);
+  // Open the required files
+  const int frameflags_file_fd = open(frameflags_file.c_str(), O_RDONLY);
   if (frameflags_file_fd == -1) {
     std::cerr << "Could not open frameflags file " << frameflags_file << std::endl;
     perror("open:");
@@ -87,14 +104,24 @@ bool PMemory::addPFrame(const CmdOptions &cmd_opts, uint64_t frame_no) {
   if (cmd_opts.cmd_verbose == true) {
     std::clog << "Opened frameflags file." << std::endl;
   }
+  const int framerefcnt_file_fd = open(framerefcnt_file.c_str(), O_RDONLY);
+  if (framerefcnt_file_fd == -1) {
+    std::cerr << "Could not open frame refcount file " << framerefcnt_file << std::endl;
+    return false;
+  }
+  if (cmd_opts.cmd_verbose == true) {
+    std::clog << "Opened frame refcount file." << std::endl;
+  }
   bool added_frame = false;
   try {
-    added_frame = addPFrame(frame_no, frameflags_file_fd);
+    added_frame = addPFrame(frame_no, frameflags_file_fd, framerefcnt_file_fd);
   } catch(...) {
     close(frameflags_file_fd);
+    close(framerefcnt_file_fd);
     throw;
   }
   close(frameflags_file_fd);
+  close(framerefcnt_file_fd);
 
   // Restore clog flags
   std::clog.flags(original_clog_flags);

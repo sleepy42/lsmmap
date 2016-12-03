@@ -24,7 +24,7 @@ private:
   uint64_t frame_size;
 
 protected:
-  bool addPFrame(uint64_t frame_no, const int flags_fd);
+  bool addPFrame(uint64_t frame_no, const int flags_fd, const int refcount_fd);
 
 public:
   PMemory(void);

@@ -21,6 +21,7 @@ static const int out_width_page_maptosign = 4;
 static const int out_width_page_swapty = 2;
 static const int out_width_page_swapoff = 13;
 static const int out_width_frame_startaddr = 12;
+static const int out_width_frame_refcnt = 3;
 
 char getTristateChar(const VPageRange::TriState &val, char TrueC,
     char FalseC, char UnknownC) {
@@ -257,7 +258,7 @@ void printResults(const CmdOptions &cmd_opts, std::ostream &stream,
             stream << " -> ";
             if (cur_vpage.isPresentRAM() == true) {
               // The current page is present in RAM
-              const PMemory::PF_Map_Ty::const_iterator cur_pframe_iter = 
+              const PMemory::PF_Map_Ty::const_iterator cur_pframe_iter =
                   pmem.getPFrameMap().find(cur_vpage.getFrameNumber());
               if (cur_pframe_iter == pmem.getPFrameMap().end()) {
                 stream << "[null]" << std::endl;
@@ -305,6 +306,11 @@ void printResults(const CmdOptions &cmd_opts, std::ostream &stream,
 
               stream << getBoolChar(cur_pframe.isZeroFrame(), 'z');
               stream << getBoolChar(cur_pframe.isIdle(), 'i');
+
+              // Now print the refcounter
+              stream << " ";
+              stream << std::dec << std::setfill('0') << std::right;
+              stream << std::setw(out_width_frame_refcnt) << cur_pframe.getFrameRefCount();
             } else if (cur_vpage.isPresentSwap() == true) {
               // The current page is swapped
               stream << "swap:";

@@ -10,6 +10,7 @@ class PFrame {
 private:
   uint64_t start_address;
   uint64_t frame_props;
+  uint64_t frame_refcount;
   bool frame_props_valid;
 
 public:
@@ -18,7 +19,8 @@ public:
   uint64_t getStartAddress(void) const;
   bool areFramePropertiesValid(void) const;
   uint64_t getRawFrameProperties(void) const;
-  void setRawFrameProperties(uint64_t new_props, bool valid);
+  uint64_t getFrameRefCount(void) const;
+  void setRawFrameProperties(uint64_t new_props, uint64_t new_frame_refcnt, bool valid);
 
   bool isLocked(void) const;      // Bit 0
   bool hasError(void) const;      // Bit 1
